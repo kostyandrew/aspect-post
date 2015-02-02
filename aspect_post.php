@@ -7,10 +7,9 @@ abstract class Aspect_Base
     protected $args = array();
     protected $labels = array();
     protected $attaches = array();
-    protected $types = array();
     protected static $objects = array();
 
-    protected function __construct($name)
+    public function __construct($name)
     {
         $this->name = str_replace(' ', '_', $name);
         if (isset(self::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . ' exists');
@@ -107,20 +106,6 @@ abstract class Aspect_Base
         return $this;
     }
 
-    public function setType()
-    {
-        $obj = func_get_args();
-        $this->types = array_merge($this->types, $obj);
-        return $this;
-    }
-
-    public function unsetType()
-    {
-        $obj = func_get_args();
-        $this->types = array_diff($this->types, $obj);
-        return $this;
-    }
-
     public static function getName($type, $parent = null)
     {
         if (is_string($type)) {
@@ -174,24 +159,21 @@ class Aspect_Type extends Aspect_Base
     public function registerType()
     {
         register_post_type(self::getName($this), $this->args);
+        
+        foreach ($this->attaches as $attach) {
+            if ($attach instanceof Aspect_Box and is_admin()) // create meta box in admin panel only
+                add_action("add_meta_boxes", function () use ($attach) {
+                    add_meta_box(self::getName($attach), $attach->labels['singular_name'], array($attach, 'renderBox'), (string)$this, $attach->args['context'], $attach->args['priority']);
+                });
+            if ($attach instanceof Aspect_Taxonomy)
+                register_taxonomy(self::getName($attach), (string)$this, $attach->args);
+        }
     }
 }
 
 class Aspect_Taxonomy extends Aspect_Base
 {
-    public function __construct($name)
-    {
-        parent::__construct($name);
-        add_action("init", array($this, 'registerTaxonomy'));
-        return $this;
-    }
-
-    public function registerTaxonomy()
-    {
-        foreach ($this->types as $type) {
-            register_taxonomy(self::getName($this), (string)$type, $this->args);
-        }
-    }
+    
 }
 
 class Aspect_Box extends Aspect_Base
@@ -202,18 +184,10 @@ class Aspect_Box extends Aspect_Base
         $this->setArgument('context', 'advanced');
         $this->setArgument('priority', 'default');
         if (is_admin()) {
-            add_action("add_meta_boxes", array($this, 'registerBox'));
             add_action("save_post", array($this, 'saveBox'));
         }
     }
-
-    public function registerBox()
-    {
-        foreach ($this->types as $type) {
-            add_meta_box(self::getName($this), $this->labels['singular_name'], array($this, 'renderBox'), (string)$type, $this->args['context'], $this->args['priority']);
-        }
-    }
-
+    
     public function renderBox($post)
     {
         wp_nonce_field(self::getName($this), self::getName($this));
