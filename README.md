@@ -16,14 +16,14 @@ $slides
 ```php
 $slides_type = new Aspect_Taxonomy('type');
 $slides_type
-  ->setType($slides); // post type where will be created taxonomy
+  ->sattachTo($slides); // post type where will be created taxonomy
 ```
 
 ### Creating metabox: ###
 ```php
 $slides_settings = new Aspect_Box('slide setting');
 $slides_settings
-  ->setType($slides); // post type
+  ->attachTo($slides); // post type
 ```
 
 ### Creating metabox input: ###
