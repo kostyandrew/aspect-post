@@ -16,7 +16,7 @@ $slides
 ```php
 $slides_type = new Aspect_Taxonomy('type');
 $slides_type
-  ->sattachTo($slides); // post type where will be created taxonomy
+  ->attachTo($slides); // post type where will be created taxonomy
 ```
 
 ### Creating metabox: ###
