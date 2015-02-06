@@ -218,8 +218,12 @@ class Aspect_Input extends Aspect_Base
     {
         $arr = func_get_arg(0);
         foreach ($arr as $name => $args) {
-            $obj = new Aspect_Input($name);
-            $obj->args = array_merge($obj->args, $args);
+            if(is_array($args)) {
+                $obj = new Aspect_Input($name);
+                $obj->args = array_merge($obj->args, $args);   
+            } else {
+                $obj = new Aspect_Input($args);
+            }
             for ($i = 1; $i < func_num_args(); $i++) {
                 $obj->attachTo(func_get_arg($i));
             }
