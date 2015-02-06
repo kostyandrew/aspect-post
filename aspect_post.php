@@ -11,7 +11,7 @@ abstract class Aspect_Base
 
     public function __construct($name)
     {
-        $this->name = str_replace(' ', '_', $name);
+        $this->name = esc_attr(str_replace(' ', '_', $name));
         if (isset(self::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . ' exists');
         self::$objects[$this->name] = $this;
 
@@ -120,9 +120,9 @@ abstract class Aspect_Base
             if (is_object($parent))
                 $parent_object = $parent;
             if (isset($parent_object))
-                return ASPECT_PREFIX . $parent_object->name . '_' . str_replace(' ', '_', $object->name);
+                return ASPECT_PREFIX . esc_attr(str_replace(' ', '_', $parent_object->name)) . '_' . esc_attr(str_replace(' ', '_', $object->name));
         } else {
-            return ASPECT_PREFIX . str_replace(' ', '_', $object->name);
+            return ASPECT_PREFIX . esc_attr(str_replace(' ', '_', $object->name));
         }
 
         throw new Exception('Incorrect input parameters');
@@ -131,13 +131,13 @@ abstract class Aspect_Base
 
 class Aspect_Type extends Aspect_Base
 {
+    public $args = array(
+        'supports' => array('title', 'editor')
+    );
+    
     public function __construct($name)
     {
         parent::__construct($name);
-        /* Default Supports */
-        $this->args['supports'] = array();
-        $this->addSupport('title');
-        $this->addSupport('editor');
         add_action("init", array($this, 'registerType'));
         return $this;
     }
@@ -161,10 +161,13 @@ class Aspect_Type extends Aspect_Base
         register_post_type(self::getName($this), $this->args);
         
         foreach ($this->attaches as $attach) {
-            if ($attach instanceof Aspect_Box and is_admin()) // create meta box in admin panel only
+            if ($attach instanceof Aspect_Box and is_admin()) {
+                add_action("save_post", array($attach, 'savePostBox'));
                 add_action("add_meta_boxes", function () use ($attach) {
                     add_meta_box(self::getName($attach), $attach->labels['singular_name'], array($attach, 'renderBox'), (string)$this, $attach->args['context'], $attach->args['priority']);
                 });
+            }
+            // create meta box in admin panel only
             if ($attach instanceof Aspect_Taxonomy)
                 register_taxonomy(self::getName($attach), (string)$this, $attach->args);
         }
@@ -178,15 +181,10 @@ class Aspect_Taxonomy extends Aspect_Base
 
 class Aspect_Box extends Aspect_Base
 {
-    public function __construct($name)
-    {
-        parent::__construct($name);
-        $this->setArgument('context', 'advanced');
-        $this->setArgument('priority', 'default');
-        if (is_admin()) {
-            add_action("save_post", array($this, 'saveBox'));
-        }
-    }
+    public $args = array(
+        'context' => 'advanced',
+        'priority' => 'default'
+    );
     
     public function renderBox($post)
     {
@@ -196,7 +194,12 @@ class Aspect_Box extends Aspect_Base
         }
     }
 
-    public function saveBox($post_id)
+    public function descriptionBox()
+    {
+        if (isset($this->args['description'])) echo '<p>'.$this->args['description'].'</p>';
+    }
+
+    public function savePostBox($post_id)
     {
         if (!isset($_POST[self::getName($this)]) or !wp_verify_nonce($_POST[self::getName($this)], self::getName($this)))
             return $post_id;
@@ -218,11 +221,9 @@ class Aspect_Box extends Aspect_Base
 
 class Aspect_Input extends Aspect_Base
 {
-    public function __construct($name)
-    {
-        parent::__construct($name);
-        $this->args['type'] = 'text';
-    }
+    public $args = array(
+        'type' => 'text'    
+    );
 
     public static function createInputs()
     {
@@ -240,7 +241,12 @@ class Aspect_Input extends Aspect_Base
     {
         if ($post_id === null)
             $post_id = get_the_ID();
-        $value = get_post_meta($post_id, self::getName($this, $parent), true);
+        if ($post_id instanceof WP_Post) $post_id = $post_id->ID;
+        if ($post_id instanceof Aspect_Page) {
+            $value = get_option(self::getName($this, $parent));
+        } else {
+            $value = get_post_meta($post_id, self::getName($this, $parent), true);
+        }
         if (isset($this->args['default'])) {
             $default = $this->args['default'];
         } else {
@@ -285,55 +291,186 @@ class Aspect_Input extends Aspect_Base
         }
     }
 
-    public function render($post, $parent)
+    public function label($parent)
+    {
+        return '<label for="' . self::getName($this, $parent) . '">' . $this->labels['singular_name'] . '</label>';
+    }
+
+    public function description()
+    {
+        if (isset($this->args['description'])) echo '<p class="description">'.$this->args['description'].'</p>';
+    }
+
+    public function render()
+    {
+        if (func_num_args() === 1) {
+            list($post, $parent) = func_get_arg(0);
+        } else {
+            list($post, $parent) = func_get_args();
+        }
+        if ($post instanceof WP_Post) :
+            ?>
+            <div>
+                <?= $this->label($parent); ?>
+                <br>
+                <?php $this->renderInput($post, $parent);?>
+            </div>
+        <?php endif;
+        if ($post instanceof Aspect_Page) :
+            $this->renderInput($post, $parent);
+        endif;
+    }
+    
+    protected function renderInput($post, $parent)
     {
         switch ($this->args['type']) {
             case "select": {
                 $this->htmlSelect($post, $parent);
                 break;
             }
+            case "color": {
+                $this->htmlColor($post, $parent);
+                break;
+            }
+            case "media": {
+                $this->htmlMedia($post, $parent);
+                break;
+            }
             default: {
                 $this->htmlText($post, $parent);
             }
         }
+        $this->description();
     }
 
     protected function htmlSelect($post, $parent)
     {
-        $value = $this->getValue($parent, 'attr', $post->ID);
+        $value = $this->getValue($parent, 'attr', $post);
         ?>
-        <div>
-            <label
-                for="<?= esc_attr(self::getName($this, $parent)) ?>"><?= $this->labels['singular_name'] ?></label><br>
-            <select name="<?= esc_attr(self::getName($this, $parent)) ?>"
-                    id="<?= esc_attr(self::getName($this, $parent)) ?>">
+         <select name="<?= self::getName($this, $parent) ?>"
+                id="<?= self::getName($this, $parent) ?>">
+            <?php
+            foreach ($this->attaches as $option) {
+                if (is_array($option)) { ?>
+                    <option <?php selected($value, esc_attr($option[0])); ?>
+                        value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
+                <?php } else { ?>
+                    <option <?php selected($value, esc_attr($option)); ?>
+                        value="<?= esc_attr($option) ?>"><?= ucfirst(esc_html($option)) ?></option>
                 <?php
-                foreach ($this->attaches as $option) {
-                    if (is_array($option)) { ?>
-                        <option <?php selected($value, esc_attr($option[0])); ?>
-                            value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
-                    <?php } else { ?>
-                        <option <?php selected($value, esc_attr($option)); ?> value="<?=esc_attr($option)?>"><?= ucfirst(esc_html($option)) ?></option>
-                    <?php
-                    }
                 }
-                ?>
-            </select>
-        </div>
+            }
+            ?>
+        </select>
     <?php
     }
 
     protected function htmlText($post, $parent)
     {
-        $value = $this->getValue($parent, 'attr', $post->ID);
+        $value = $this->getValue($parent, 'attr', $post);
         ?>
-        <div>
-            <label
-                for="<?= esc_attr(self::getName($this, $parent)) ?>"><?= $this->labels['singular_name'] ?></label><br>
-            <input type="text" name="<?= esc_attr(self::getName($this, $parent)) ?>"
-                   id="<?= esc_attr(self::getName($this, $parent)) ?>"
-                   value="<?= esc_attr($value) ?>"/>
-        </div>
+        <input class="<?php if($post instanceof Aspect_Page) echo 'regular-text';?> code" type="text" name="<?= self::getName($this, $parent) ?>"
+               id="<?= self::getName($this, $parent) ?>"
+               value="<?= $value ?>"/>
     <?php
     }
+    protected function htmlColor($post, $parent)
+    {
+        $value = $this->getValue($parent, 'attr', $post);
+        static $calling = false;
+        if (!$calling) {
+            wp_enqueue_style('wp-color-picker');
+            wp_enqueue_script('wp-color-picker');
+            ?>
+            <script>
+                (function ($) {
+                    $(function () {
+                        $('.<?=ASPECT_PREFIX?>-color-picker').wpColorPicker();
+                    });
+                })(jQuery);
+            </script>
+            <?php
+            $calling = true;
+        }
+        ?>
+        <input type="text" name="<?= self::getName($this, $parent) ?>"
+               id="<?= self::getName($this, $parent) ?>" class="<?= ASPECT_PREFIX ?>-color-picker"
+               value="<?= $value ?>"/>
+
+    <?php
+    }
+
+    protected function htmlMedia($post, $parent)
+
+    {
+        $value = $this->getValue($parent, 'url', $post);
+        static $calling = false;
+        if (!$calling) {
+            wp_enqueue_script('jquery');
+            wp_enqueue_script('thickbox');
+            wp_enqueue_style('thickbox');
+            wp_enqueue_script('media-upload');
+            ?>
+            <?php
+            $calling = true;
+        } ?>
+        <script>
+            jQuery(document).ready(function($) {
+                $('#<?= self::getName($this, $parent) ?>_upload').click(function() {
+                    tb_show('Upload', 'media-upload.php?referer=<?= self::getName($this, $parent) ?>&type=image&TB_iframe=true&post_id=0', false);
+                    return false;
+                });
+                window.send_to_editor = function(html) {
+                    var image_url = $('img',html).attr('src');
+                    var name = 'referer';
+                    name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
+                    var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
+                    results = regex.exec(jQuery('#TB_iframeContent').attr('src'));
+                    var id = results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
+                    $('#'+id).val(image_url);
+                    tb_remove();
+                }
+            });
+        </script>
+        <input class="<?php if($post instanceof Aspect_Page) echo 'regular-text';?> code" type="text" id="<?= self::getName($this, $parent) ?>" name="<?= self::getName($this, $parent) ?>"
+               value="<?= $value ?>"/>
+        <input id="<?= self::getName($this, $parent) ?>_upload" class="button" type="button" value="<?php _e('Upload'); ?>"/>
+    <?php }
+}
+
+class Aspect_Page extends Aspect_Base
+{
+    public function __construct($name)
+    {
+        parent::__construct($name);
+        add_action('admin_menu', function () {
+            if (isset($this->args['parent_slug']) and $this->args['parent_slug'] !== 'options.php') {
+                add_submenu_page($this->args['parent_slug'], $this->labels['singular_name'], $this->labels['singular_name'], 'manage_options', self::getName($this), array(__CLASS__, 'renderPage'));
+            } else {
+                add_menu_page($this->labels['singular_name'], $this->labels['singular_name'], 'manage_options', self::getName($this), array($this, 'renderPage'));
+            }
+        });
+        add_action('admin_init', function () {
+            foreach ($this->attaches as $section) {
+                add_settings_section(self::getName($section, $this), $section->labels['singular_name'], array($section, 'descriptionBox'), self::getName($this));
+                foreach ($section->attaches as $field) {
+                    register_setting(self::getName($section, $this), self::getName($field, $section));
+                    add_settings_field(self::getName($field, $section), $field->label($section), array($field, 'render'), self::getName($this), Aspect_Base::getName($section, $this), array($this, $section));
+                }
+            }
+        });
+    }
+
+    function renderPage()
+    { ?>
+        <div class="wrap">
+            <h2><?php echo get_admin_page_title() ?></h2>
+
+            <form action="options.php" method="POST">
+                <?php foreach ($this->attaches as $section) settings_fields(self::getName($section, $this));?>
+                <?php do_settings_sections(self::getName($this)); ?>
+                <?php submit_button(); ?>
+            </form>
+        </div>
+    <?php }
 }
