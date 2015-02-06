@@ -462,7 +462,7 @@ class Aspect_Page extends Aspect_Base
                 });
                 foreach ($section->attaches as $field) {
                     add_action('admin_init', function () use ($field, $section) {
-                        register_setting(self::getName($section, $this), self::getName($field, $section, $this));
+                        register_setting(self::getName($this), self::getName($field, $section, $this));
                         add_settings_field(self::getName($field, $section, $this), $field->label($this, $section), array($field, 'render'), self::getName($this), self::getName($section, $this), array($this, $section));
                     });
                 }
@@ -487,13 +487,7 @@ class Aspect_Page extends Aspect_Base
 
             <form action="options.php" method="POST">
                 <?php
-                foreach ($this->attaches as $attach) {
-                    if ($attach instanceof Aspect_Box) {
-                        settings_fields(self::getName($attach, $this));
-                    } else {
-                        continue;
-                    }
-                }
+                settings_fields(self::getName($this));
                 do_settings_sections(self::getName($this));
                 submit_button();
                 ?>
