@@ -445,7 +445,7 @@ class Aspect_Page extends Aspect_Base
         parent::__construct($name);
         add_action('admin_menu', function () {
             if (isset($this->args['parent_slug']) and $this->args['parent_slug'] !== 'options.php') {
-                add_submenu_page($this->args['parent_slug'], $this->labels['singular_name'], $this->labels['singular_name'], 'manage_options', self::getName($this), array(__CLASS__, 'renderPage'));
+                add_submenu_page($this->args['parent_slug'], $this->labels['singular_name'], $this->labels['singular_name'], 'manage_options', self::getName($this), array($this, 'renderPage'));
             } else {
                 add_menu_page($this->labels['singular_name'], $this->labels['singular_name'], 'manage_options', self::getName($this), array($this, 'renderPage'));
             }
