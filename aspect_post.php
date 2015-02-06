@@ -234,6 +234,9 @@ class Aspect_Input extends Aspect_Base
     {
         if ($post === null)
             $post = get_the_ID();
+        if (is_string($post) and !is_numeric($post)) {
+            $post = Aspect_Page::getObject($post);
+        }
         if ($post instanceof WP_Post) $post = $post->ID;
         if ($post instanceof Aspect_Page) {
             $value = get_option($this->nameInput($post, $parent));
