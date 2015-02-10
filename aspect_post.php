@@ -5,7 +5,7 @@ abstract class Aspect_Base
 {
     protected $name;
     protected $args = array();
-    protected $labels = array();
+    public $labels = array();
     protected $attaches = array();
     protected static $objects = array();
 
