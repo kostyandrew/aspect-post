@@ -428,6 +428,7 @@ class Aspect_Input extends Aspect_Base
                     results = regex.exec(jQuery('#TB_iframeContent').attr('src'));
                     var id = results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
                     $('#'+id).val(image_url);
+                    $('#' + id + '_preview img').attr({'src':image_url});
                     tb_remove();
                 }
             });
@@ -435,6 +436,9 @@ class Aspect_Input extends Aspect_Base
         <input class="<?php if($post instanceof Aspect_Page) echo 'regular-text';?> code" type="text" id="<?= $this->nameInput($post, $parent) ?>" name="<?= $this->nameInput($post, $parent) ?>"
                value="<?= $value ?>"/>
         <input id="<?= $this->nameInput($post, $parent) ?>_upload" class="button" type="button" value="<?php _e('Upload'); ?>"/>
+        <div id="<?= $this->nameInput($post, $parent) ?>_preview" style="margin-top: 10px">
+            <img style="max-width:50%;" src="<?=$value;?>" />
+        </div>
     <?php }
 }
 
