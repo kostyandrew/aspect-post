@@ -13,8 +13,7 @@ abstract class Aspect_Base
     {
         $this->name = esc_attr(str_replace(' ', '_', $name));
         if (isset(self::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . ' exists');
-        self::$objects[$this->name] = $this;
-
+        self::$objects[get_called_class()][$this->name] = $this;
         $this->args['labels'] = &$this->labels;
         /* Creating Label Using Translating */
         $singular_name = ucwords($name);
@@ -31,8 +30,8 @@ abstract class Aspect_Base
     public static function getObject($name)
     {
         $re_name = str_replace(' ', '_', $name);
-        if (isset(self::$objects[$re_name])) {
-            $object = self::$objects[$re_name];
+        if (isset(self::$objects[get_called_class()][$re_name])) {
+            $object = self::$objects[get_called_class()][$re_name];
             return $object;
         }
         throw new Exception(get_called_class() . ' with ' . $name . ' not found');
@@ -111,7 +110,6 @@ abstract class Aspect_Base
         $args = func_get_args();
         $name = ASPECT_PREFIX;
         foreach ($args as $arg) {
-            if (is_string($arg)) $obj = self::getObject($arg);
             if (is_object($arg)) $obj = $arg;
             if($name) {
                 $name .= '_' . $obj->name;

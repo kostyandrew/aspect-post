@@ -144,6 +144,10 @@ class Aspect_Input extends Aspect_Base
                 $this->htmlSelect($post, $parent);
                 break;
             }
+            case "radio": {
+                $this->htmlRadio($post, $parent);
+                break;
+            }
             case "color": {
                 $this->htmlColor($post, $parent);
                 break;
@@ -389,5 +393,20 @@ class Aspect_Input extends Aspect_Base
             });
         </script>
     <?php
+    }
+
+    protected function htmlRadio($post, $parent)
+    {
+        $value = $this->getValue($parent, 'attr', $post);
+        foreach ($this->attaches as $option) {
+            if (is_array($option)) { ?>
+                <label><input type="radio" <?php checked($value, esc_attr($option[0])); ?> name="<?= $this->nameInput($post, $parent) ?>"
+                    value="<?= esc_attr($option[0]) ?>">&nbsp;<?= esc_html($option[1]) ?></label>
+            <?php } else { ?>
+                <label><input type="radio" <?php checked($value, esc_attr($option)); ?> name="<?= $this->nameInput($post, $parent) ?>"
+                    value="<?= esc_attr($option) ?>">&nbsp;<?= ucfirst(esc_html($option)) ?></label>
+            <?php
+            }
+        }
     }
 }
