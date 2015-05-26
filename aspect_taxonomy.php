@@ -210,4 +210,8 @@ SQL;
             )
         );
     }
+
+    public function get_terms($args) {
+        return get_terms(strval($this), $args);
+    }
 }

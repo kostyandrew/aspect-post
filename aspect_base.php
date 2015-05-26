@@ -27,6 +27,11 @@ abstract class Aspect_Base
         return self::getName($this);
     }
 
+    /**
+     * @param $name
+     * @return static
+     * @throws Exception
+     */
     public static function getObject($name)
     {
         $re_name = str_replace(' ', '_', $name);
