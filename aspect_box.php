@@ -6,6 +6,7 @@ class Aspect_Box extends Aspect_Base
         'context' => 'advanced',
         'priority' => 'default'
     );
+    protected static $objects = array();
 
     public function renderBox($post)
     {
@@ -14,21 +15,24 @@ class Aspect_Box extends Aspect_Base
             $input->render($post, $this);
         }
     }
-    public function renderCategoryBox($post, $type) {
-        if($type === 'create') {
-            echo '<h3>'.$this->labels['singular_name'].'</h3>';
+
+    public function renderCategoryBox($post, $type)
+    {
+        if ($type === 'create') {
+            echo '<h3>' . $this->labels['singular_name'] . '</h3>';
             $this->descriptionBox();
         }
-        if($type === 'edit') { ?>
+        if ($type === 'edit') { ?>
             <h3><?= $this->labels['singular_name']; ?></h3>
             <?php $this->descriptionBox(); ?>
-            <table class="form-table"><tbody><?php
+            <table class="form-table">
+                <tbody><?php
         }
         wp_nonce_field(self::getName($this), self::getName($this));
         foreach ($this->attaches as $input) {
             $input->render($post, $this);
         }
-        if($type === 'edit') {
+        if ($type === 'edit') {
             echo '</tbody></table>';
         }
     }
@@ -52,28 +56,31 @@ class Aspect_Box extends Aspect_Base
         foreach ($this->attaches as $input) {
             $data = null;
             if (!isset($_POST[$input->nameInput(null, $this)])) continue;
-            if(is_string($_POST[$input->nameInput(null, $this)]))
+            if (is_string($_POST[$input->nameInput(null, $this)]))
                 $data = sanitize_text_field($_POST[$input->nameInput(null, $this)]);
-            if(is_array($_POST[$input->nameInput(null, $this)])) {
+            if (is_array($_POST[$input->nameInput(null, $this)])) {
                 $values = $_POST[$input->nameInput(null, $this)];
-                if($input->args['type'] === 'listing') {
-                    foreach($values as $val) {
+                if ($input->args['type'] === 'listing') {
+                    foreach ($values as $val) {
                         $idata = array();
-                        foreach($val as $id => $ival) {
-                            if(!empty($ival))
+                        foreach ($val as $id => $ival) {
+                            if (!empty($ival))
                                 $idata[$id] = sanitize_text_field($ival);
                         }
-                        if(!empty($idata))
+                        if (!empty($idata))
                             $data[] = $idata;
                     }
-                }else{
-                    $data = array_map('sanitize_text_field',$values);
+                } else {
+                    $data = array_map('sanitize_text_field', $values);
                 }
             }
+            if (isset($input->args['saveCallback']) && is_callable($input->args['saveCallback']))
+                call_user_func_array($input->args['saveCallback'], array($data, $input->nameInput(null, $this), $post_id));
             update_post_meta($post_id, $input->nameInput(null, $this), $data);
         }
         return $post_id;
     }
+
     public function saveTaxonomyBox($term_id)
     {
         if (!isset($_POST[self::getName($this)]) or !wp_verify_nonce($_POST[self::getName($this)], self::getName($this)))
@@ -81,10 +88,15 @@ class Aspect_Box extends Aspect_Base
         if (!current_user_can('manage_categories'))
             return $term_id;
         foreach ($this->attaches as $input) {
+            if (isset($input->args['saveCallback']) && is_callable($input->args['saveCallback']))
+                call_user_func($input->args['saveCallback']);
             if (!isset($_POST[$input->nameInput(null, $this)])) continue;
             $data = sanitize_text_field($_POST[$input->nameInput(null, $this)]);
-            if($data)
+            if ($data) {
+                if (isset($input->args['saveCallback']) && is_callable($input->args['saveCallback']))
+                    call_user_func_array($input->args['saveCallback'], array($data, $input->nameInput(null, $this), $term_id));
                 Aspect_Taxonomy::update_term_meta($term_id, $input->nameInput(null, $this), $data);
+            }
         }
         return $term_id;
     }

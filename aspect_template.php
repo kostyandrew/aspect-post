@@ -5,6 +5,7 @@ class Aspect_Template extends Aspect_Base
     private $thisRequested = false;
     private static $requested = false;
     private static $prettyLinkStructure;
+    protected static $objects = array();
 
     public function __construct($name)
     {
@@ -20,8 +21,9 @@ class Aspect_Template extends Aspect_Base
     {
         $name = self::getName($this);
         add_rewrite_tag('%' . $name . '%', '([^&].+)');
-        if (self::$prettyLinkStructure and (isset($this->args['paged']) and $this->args['paged']))
-            add_rewrite_rule('^' . $name . '/([^/]*)/page/([^/]*)/?', 'index.php?' . $name . '=$matches[1]&page=$matches[2]', 'top');
+        if (self::$prettyLinkStructure and (isset($this->args['paged']) and $this->args['paged'])) {
+            add_rewrite_rule('^' . $name . '/([^/]*)/page/([^/]*)/?', 'index.php?' . $name . '=$matches[1]&paged=$matches[2]', 'top');
+        }
         if (self::$prettyLinkStructure)
             add_rewrite_rule('^' . $name . '/([^/]*)/?', 'index.php?' . $name . '=$matches[1]', 'top');
     }

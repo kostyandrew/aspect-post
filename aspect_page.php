@@ -2,14 +2,18 @@
 
 class Aspect_Page extends Aspect_Base
 {
+    protected static $objects = array();
+
     public function __construct($name)
     {
         parent::__construct($name);
-        if (isset($this->args['parent_slug'])) {
-            add_action('admin_menu', array($this, 'addSubMenuPage'));
-        } else {
-            add_action('admin_menu', array($this, 'addMenuPage'));
-        }
+        add_action('admin_menu', function () {
+            if (isset($this->args['parent_slug'])) {
+                call_user_func(array($this, 'addSubMenuPage'));
+            } else {
+                call_user_func(array($this, 'addMenuPage'));
+            }
+        });
         add_action('init', function () {
             foreach ($this->attaches as $attach) {
                 if ($attach instanceof Aspect_Page) {

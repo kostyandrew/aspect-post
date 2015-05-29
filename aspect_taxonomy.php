@@ -74,6 +74,7 @@ class Aspect_Taxonomy extends Aspect_Base
         'year'
     );
     private $registered = false;
+    protected static $objects = array();
 
     public function registerTaxonomy($post_type)
     {

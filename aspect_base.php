@@ -7,13 +7,12 @@ abstract class Aspect_Base
     public $args = array();
     public $labels = array();
     protected $attaches = array();
-    protected static $objects = array();
 
     public function __construct($name)
     {
         $this->name = esc_attr(str_replace(' ', '_', $name));
-        if (isset(self::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . ' exists');
-        self::$objects[get_called_class()][$this->name] = $this;
+        if (isset(static::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . 'already exists');
+        static::$objects[$this->name] = $this;
         $this->args['labels'] = &$this->labels;
         /* Creating Label Using Translating */
         $singular_name = ucwords($name);
@@ -35,8 +34,8 @@ abstract class Aspect_Base
     public static function getObject($name)
     {
         $re_name = str_replace(' ', '_', $name);
-        if (isset(self::$objects[get_called_class()][$re_name])) {
-            $object = self::$objects[get_called_class()][$re_name];
+        if (isset(static::$objects[$re_name])) {
+            $object = static::$objects[$re_name];
             return $object;
         }
         throw new Exception(get_called_class() . ' with ' . $name . ' not found');
@@ -115,13 +114,43 @@ abstract class Aspect_Base
         $args = func_get_args();
         $name = ASPECT_PREFIX;
         foreach ($args as $arg) {
-            if (is_object($arg)) $obj = $arg;
+            if (!is_object($arg)) throw new Exception(strval($arg) . ' must be Aspect Object');
             if($name) {
-                $name .= '_' . $obj->name;
+                $name .= '_' . $arg->name;
             }else{
-                $name .= $obj->name;
+                $name .= $arg->name;
             }
         }
         return $name;
+    }
+
+    public static function createFew() {
+        $arr = func_get_args();
+        $return = array();
+        foreach ($arr as $name => $args) {
+            if (is_array($args)) {
+                $obj = new static($name);
+                $obj->args = array_merge($obj->args, $args);
+            } else {
+                $obj = new static($args);
+            }
+            $return[] = $obj;
+        }
+        return $return;
+    }
+
+    public static function getFew() {
+        $arr = func_get_args();
+        $return = array();
+        foreach ($arr as $name => $args) {
+            if (is_array($args)) {
+                $obj = static::getObject($name);
+                $obj->args = array_merge($obj->args, $args);
+            } else {
+                $obj = static::getObject($args);
+            }
+            $return[] = $obj;
+        }
+        return $return;
     }
 }

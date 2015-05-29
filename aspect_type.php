@@ -77,6 +77,7 @@ class Aspect_Type extends Aspect_Base
     public $args = array(
         'supports' => array('title', 'editor')
     );
+    protected static $objects = array();
 
     public function __construct($name)
     {

@@ -5,21 +5,16 @@ class Aspect_Input extends Aspect_Base
     public $args = array(
         'type' => 'text'
     );
+    protected static $objects = array();
 
     public static function createInputs()
     {
-        $arr = func_get_args();
-        $return = array();
-        foreach ($arr as $name => $args) {
-            if (is_array($args)) {
-                $obj = new Aspect_Input($name);
-                $obj->args = array_merge($obj->args, $args);
-            } else {
-                $obj = new Aspect_Input($args);
-            }
-            $return[] = $obj;
-        }
-        return $return;
+        return call_user_func_array(array(get_class(),'createFew'), func_get_args());
+    }
+
+    public static function getInputs()
+    {
+        return call_user_func_array(array(get_class(),'getFew'), func_get_args());
     }
 
     public function getValue($parent, $esc = null, $post = null)
@@ -175,17 +170,17 @@ class Aspect_Input extends Aspect_Base
 
     protected function htmlSelect($post, $parent)
     {
-        $value = $this->getValue($parent, 'attr', $post);
+        $value = $this->getValue($parent, null, $post);
         ?>
-        <select name="<?= $this->nameInput($post, $parent) ?>"
+        <select name="<?= $this->nameInput($post, $parent) ?><?php if(isset($this->args['multiply']) && $this->args['multiply']) echo '[]'; ?>" <?php if(isset($this->args['multiply']) && $this->args['multiply']) echo 'multiple'; ?>
                 id="<?= $this->nameInput($post, $parent) ?>">
             <?php
             foreach ($this->attaches as $option) {
                 if (is_array($option)) { ?>
-                    <option <?php selected($value, esc_attr($option[0])); ?>
+                    <option <?php $this->selected($value, esc_attr($option[0])); ?>
                         value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
                 <?php } else { ?>
-                    <option <?php selected($value, esc_attr($option)); ?>
+                    <option <?php $this->selected($value, esc_attr($option)); ?>
                         value="<?= esc_attr($option) ?>"><?= ucfirst(esc_html($option)) ?></option>
                 <?php
                 }
@@ -193,6 +188,14 @@ class Aspect_Input extends Aspect_Base
             ?>
         </select>
     <?php
+    }
+    private function selected($selected, $current) {
+        if(isset($this->args['multiply']) && $this->args['multiply']) {
+            if(!is_array($selected)) $selected = array();
+            if(array_key_exists($current, $selected) or in_array($current, $selected)) echo ' selected ';
+        }else{
+            selected($selected, $current);
+        }
     }
 
     protected function htmlText($post, $parent)
