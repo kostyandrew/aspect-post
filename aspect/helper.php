@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Helper
+namespace Aspect;
+class Helper
 {
     public static function copyrightYear($start_year)
     {

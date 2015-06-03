@@ -1,7 +1,8 @@
 <?php
+namespace Aspect;
 if(!defined('ASPECT_PREFIX')) define('ASPECT_PREFIX', 'aspect');
 
-abstract class Aspect_Base
+abstract class Base
 {
     protected $name;
     public $args = array();

@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Ajax
+namespace Aspect;
+class Ajax
 {
     public static function add_action($tag, $callback)
     {

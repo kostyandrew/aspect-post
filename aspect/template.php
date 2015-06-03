@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Template extends Aspect_Base
+namespace Aspect;
+class Template extends Base
 {
     private $thisRequested = false;
     private static $requested = false;

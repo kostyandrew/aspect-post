@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Box extends Aspect_Base
+namespace Aspect;
+class Box extends Base
 {
     public $args = array(
         'context' => 'advanced',
@@ -64,8 +64,13 @@ class Aspect_Box extends Aspect_Base
                     foreach ($values as $val) {
                         $idata = array();
                         foreach ($val as $id => $ival) {
-                            if (!empty($ival))
+                            if (!empty($ival) && !is_array($ival)) {
                                 $idata[$id] = sanitize_text_field($ival);
+                            } elseif(!empty($ival)) {
+                                array_walk($ival, 'sanitize_text_field');
+                                $ival = array_filter ($ival);
+                                $idata[$id] = $ival;
+                            }
                         }
                         if (!empty($idata))
                             $data[] = $idata;
@@ -95,7 +100,7 @@ class Aspect_Box extends Aspect_Base
             if ($data) {
                 if (isset($input->args['saveCallback']) && is_callable($input->args['saveCallback']))
                     call_user_func_array($input->args['saveCallback'], array($data, $input->nameInput(null, $this), $term_id));
-                Aspect_Taxonomy::update_term_meta($term_id, $input->nameInput(null, $this), $data);
+                Taxonomy::update_term_meta($term_id, $input->nameInput(null, $this), $data);
             }
         }
         return $term_id;

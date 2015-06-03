@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Page extends Aspect_Base
+namespace Aspect;
+class Page extends Base
 {
     protected static $objects = array();
 
@@ -16,12 +16,12 @@ class Aspect_Page extends Aspect_Base
         });
         add_action('init', function () {
             foreach ($this->attaches as $attach) {
-                if ($attach instanceof Aspect_Page) {
+                if (is_subclass_of($attach,'\Aspect\Page') or $attach instanceof \Aspect\Page) {
                     $attach->setArgument('parent_slug', self::getName($this));
                     remove_action('admin_menu', array($attach, 'addMenuPage'));
                     add_action('admin_menu', array($attach, 'addSubMenuPage'));
                     continue;
-                } elseif ($attach instanceof Aspect_Box) {
+                } elseif (is_subclass_of($attach, '\Aspect\Box') or $attach instanceof \Aspect\Box) {
                     $section = $attach;
                 } else {
                     throw new Exception('Incorrect input parameters');

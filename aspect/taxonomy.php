@@ -1,6 +1,6 @@
 <?php
-
-class Aspect_Taxonomy extends Aspect_Base
+namespace Aspect;
+class Taxonomy extends Base
 {
     private $reserved = array(
         'attachment',
@@ -88,12 +88,12 @@ class Aspect_Taxonomy extends Aspect_Base
 
         if(!$this->registered) {
             foreach ($this->attaches as $attach) {
-                if ($attach instanceof Aspect_Box and is_admin()) {
+                if ((is_subclass_of($attach,'\Aspect\Box') or $attach instanceof \Aspect\Box) and is_admin()) {
                     add_action(self::getName($this)."_edit_form", function ($term) use ($attach) {
                         $attach->renderCategoryBox($term, 'edit');
                     });
                     add_action(self::getName($this)."_add_form_fields", function ($tax) use ($attach) {
-                        $term = new stdClass();
+                        $term = new \stdClass();
                         $term->taxonomy = $tax;
                         $attach->renderCategoryBox($term, 'create');
                     });
