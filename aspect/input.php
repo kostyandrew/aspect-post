@@ -7,23 +7,26 @@ class Input extends Base
     );
     protected static $objects = array();
 
+    /**
+     * @return static[]
+     */
     public static function createInputs()
     {
-        return call_user_func_array(array(get_class(), 'createFew'), func_get_args());
+        return call_user_func_array(array('static', 'createFew'), func_get_args());
     }
 
+    /**
+     * @return static[]
+     */
     public static function getInputs()
     {
-        return call_user_func_array(array(get_class(), 'getFew'), func_get_args());
+        return call_user_func_array(array('static', 'getFew'), func_get_args());
     }
 
     public function getValue($parent, $esc = null, $post = null)
     {
         if ($post === null)
             $post = get_the_ID();
-        if (is_string($post) and !is_numeric($post)) {
-            $post = Page::getObject($post);
-        }
         if (is_numeric($post)) {
             $value = get_post_meta($post, $this->nameInput($post, $parent), true);
         }
@@ -31,7 +34,7 @@ class Input extends Base
             $post = $post->ID;
             $value = get_post_meta($post, $this->nameInput($post, $parent), true);
         }
-        if (is_subclass_of($post, '\Aspect\Page') or $post instanceof Page) {
+        if (is_a($post, '\Aspect\Page')) {
             $value = get_option($this->nameInput($post, $parent));
         }
         if ($post instanceof \stdClass && isset($post->taxonomy)) {
@@ -88,7 +91,7 @@ class Input extends Base
                 <?php $this->renderInput($post, $parent);?>
             </div>
         <?php endif;
-        if (is_subclass_of($post,'\Aspect\Page') or $post instanceof Page) :
+        if (is_a($post, '\Aspect\Page')) :
             $this->renderInput($post, $parent);
         endif;
         if ($post instanceof \stdClass && isset($post->taxonomy) && isset($post->term_id)) { ?>
@@ -110,14 +113,20 @@ class Input extends Base
         <?php }
     }
 
-    public function renderInput($post, $parent)
+    public function getType()
     {
         $type = $this->args['type'];
         $name = str_replace(' ', '', ucwords($type));
         if (empty($name)) $name = 'Text';
+        return $name;
+    }
+
+    public function renderInput($post, $parent)
+    {
+        $name = $this->getType();
         $method = 'html' . $name;
         if (!method_exists($this, $method))
-            throw new Exception('Input type with ' . $type . ' not found');
+            throw new \Exception('Input type with ' . $name . ' not found');
 
         call_user_func_array(array($this, $method), array($post, $parent));
         $this->description();
@@ -125,7 +134,7 @@ class Input extends Base
 
     public function nameInput($post, $parent)
     {
-        if (is_subclass_of($post,'\Aspect\Page') or $post instanceof Page) return self::getName($this, $parent, $post);
+        if (is_a($post, '\Aspect\Page')) return self::getName($this, $parent, $post);
         return self::getName($this, $parent);
     }
 
@@ -261,5 +270,47 @@ class Input extends Base
             <?php
             }
         }
+    }
+
+    public function processingData($elem_id)
+    {
+        $data = null;
+        $key_name = $this->nameInput(null, $this);
+        $data = $_POST[$key_name];
+        $data = call_user_func_array(array($this, 'saveBefore'), array($data, $key_name, $elem_id));
+        if (is_string($data))
+            $data = sanitize_text_field($data);
+        if (is_array($data))
+            call_user_func_array(array('static', 'filter_array'), array(&$data));
+        $data = call_user_func_array(array($this, 'saveAfter'), array($data, $key_name, $elem_id));
+        return [$data, $key_name];
+    }
+
+    public function saveBefore($data, $key_name, $elem_id)
+    {
+        if (isset($this->args['saveBefore']) && is_callable($this->args['saveBefore']))
+            call_user_func_array($this->args['saveBefore'], array($data, $key_name, $elem_id));
+        $data = apply_filters_ref_array('\Aspect\Input\saveBefore', array($data, $this, $key_name, $elem_id));
+        return $data;
+    }
+
+    public function saveAfter($data, $key_name, $elem_id)
+    {
+        if (isset($this->args['saveAfter']) && is_callable($this->args['saveAfter']))
+            call_user_func_array($this->args['saveAfter'], array($data, $key_name, $elem_id));
+        $data = apply_filters_ref_array('\Aspect\Input\saveAfter', array($data, $this, $key_name, $elem_id));
+        return $data;
+    }
+
+    public function setOrigin($origin)
+    {
+        if (!is_a($origin, '\Aspect\Origin'))
+            throw new \Exception(strval($origin) . ' is not valid origin');
+        /* @var $origin \Aspect\Origin */
+        add_action('init', function () use ($origin) {
+            $attaches = $origin->returnOrigin();
+            $this->attachFew($attaches);
+        });
+        return $this;
     }
 }

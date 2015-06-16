@@ -94,7 +94,7 @@ class Template extends Base
         }
     }
 
-    private function link($param)
+    private function link($param = null)
     {
         $name = self::getName($this);
         if($param == null) $param = $name;

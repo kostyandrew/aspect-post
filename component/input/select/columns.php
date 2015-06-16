@@ -3,7 +3,7 @@ namespace Component\Input\Select;
 trait Columns {
     protected function htmlSelectColumns($post, $parent)
     {
-        $value = $this->getValue($parent, null, $post);
+        $value = (array) $this->getValue($parent, null, $post);
         $posts = $this->attaches;
         ?>
         <script>
@@ -23,14 +23,14 @@ trait Columns {
                     });
                 });
                 $('.<?= $this->nameInput($post, $parent) ?>').parents('form').on('submit', function () {
-                    $('.<?= $this->nameInput($post, $parent) ?>.to option').attr({'selected': 'selected'});
+                    $('.<?= $this->nameInput($post, $parent) ?>.to option, .<?= $this->nameInput($post, $parent) ?>.from option').attr({'selected': 'selected'});
                 });
             });
         </script>
         <label
             style="display: inline-block"> <?= isset($this->labels['unselected_name']) ? $this->labels['unselected_name'] : 'Unselected'; ?>
             <br>
-            <select class="<?= $this->nameInput($post, $parent) ?> from" multiple>
+            <select style="min-width: 150px" class="<?= $this->nameInput($post, $parent) ?> from" name="<?= $this->nameInput($post, $parent) ?>_unselected[]" multiple>
                 <?php foreach ($posts as $option) { ?>
                     <?php if (in_array(esc_attr($option[0]), $value)) continue; ?>
                     <option value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
@@ -44,7 +44,7 @@ trait Columns {
         <label
             style="display: inline-block"> <?= isset($this->labels['selected_name']) ? $this->labels['selected_name'] : 'Selected'; ?>
             <br>
-            <select class="<?= $this->nameInput($post, $parent) ?> to" name="<?= $this->nameInput($post, $parent) ?>[]"
+            <select style="min-width: 150px" class="<?= $this->nameInput($post, $parent) ?> to" name="<?= $this->nameInput($post, $parent) ?>[]"
                     id="<?= $this->nameInput($post, $parent) ?>" multiple>
                 <?php foreach ($posts as $option) { ?>
                     <?php if (!in_array(esc_attr($option[0]), $value)) continue; ?>

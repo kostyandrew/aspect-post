@@ -2,7 +2,7 @@
 namespace Aspect;
 class Type extends Base
 {
-    private $reserved = array(
+    static private $reserved = array(
         'attachment',
         'attachment_id',
         'author',
@@ -102,11 +102,11 @@ class Type extends Base
     public function registerType()
     {
         $name = self::getName($this);
-        if (!in_array($name, $this->reserved) && !$this->registered)
+        if (!in_array($name, static::$reserved) && !$this->registered)
             register_post_type($name, $this->args);
 
         foreach ($this->attaches as $attach) {
-            if ((is_subclass_of($attach, '\Aspect\Box') or $attach instanceof \Aspect\Box) and is_admin()) {
+            if (is_a($attach, '\Aspect\Box') and is_admin()) { /* @var $attach \Aspect\Box */
                 add_action("save_post", array($attach, 'savePostBox'));
                 add_action("add_meta_boxes", function () use ($attach) {
                     add_meta_box(self::getName($attach), $attach->labels['singular_name'], array($attach, 'renderBox'), (string)$this, $attach->args['context'], $attach->args['priority']);
@@ -114,7 +114,17 @@ class Type extends Base
             }
             // create meta box in admin panel only
 
-            if (is_subclass_of($attach, '\Aspect\Taxonomy') or $attach instanceof \Aspect\Taxonomy) $attach->registerTaxonomy(strval($this));
+            if (is_a($attach, '\Aspect\Taxonomy')) { /* @var $attach \Aspect\Taxonomy */
+                $attach->registerTaxonomy(strval($this));
+            }
         }
+    }
+
+    public function getOrigin($args = array()) {
+        $origin = parent::getOrigin($args);
+        $origin
+            ->setArgument('type', 'post')
+            ->setPostType($this);
+        return $origin;
     }
 }

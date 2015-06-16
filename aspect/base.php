@@ -8,11 +8,16 @@ abstract class Base
     public $args = array();
     public $labels = array();
     protected $attaches = array();
+    protected static $objects = array();
 
+    /**
+     * @param $name
+     * @throws \Exception
+     */
     public function __construct($name)
     {
         $this->name = esc_attr(str_replace(' ', '_', $name));
-        if (isset(static::$objects[$this->name])) throw new Exception(get_called_class() . ' with ' . $name . 'already exists');
+        if (isset(static::$objects[$this->name])) throw new \Exception(get_called_class() . ' with ' . $name . ' already exists');
         static::$objects[$this->name] = $this;
         $this->args['labels'] = &$this->labels;
         /* Creating Label Using Translating */
@@ -20,6 +25,17 @@ abstract class Base
         $multi_name = $singular_name . 's';
         $this->labels['singular_name'] = __($singular_name);
         $this->labels['name'] = __($multi_name);
+
+        static::init();
+    }
+
+    protected static function init() {
+        static $initialized = false;
+        if(!$initialized) {
+            // do some
+
+            $initialized = true;
+        }
     }
 
     public function __toString()
@@ -30,7 +46,7 @@ abstract class Base
     /**
      * @param $name
      * @return static
-     * @throws Exception
+     * @throws \Exception
      */
     public static function getObject($name)
     {
@@ -39,9 +55,13 @@ abstract class Base
             $object = static::$objects[$re_name];
             return $object;
         }
-        throw new Exception(get_called_class() . ' with ' . $name . ' not found');
+        throw new \Exception(get_called_class() . ' with ' . $name . ' not found');
     }
 
+
+    /**
+     * @return static
+     */
     public function setArgument($args, $data = null)
     {
         if (is_array($args)) {
@@ -85,9 +105,20 @@ abstract class Base
         return $this;
     }
 
+    public function attachFew($obj)
+    {
+        $this->attaches = array_merge($this->attaches, $obj);
+        return $this;
+    }
+
     public function detach()
     {
         $obj = func_get_args();
+        $this->attaches = array_diff($this->attaches, $obj);
+        return $this;
+    }
+    public function detachFew($obj)
+    {
         $this->attaches = array_diff($this->attaches, $obj);
         return $this;
     }
@@ -115,7 +146,7 @@ abstract class Base
         $args = func_get_args();
         $name = ASPECT_PREFIX;
         foreach ($args as $arg) {
-            if (!is_object($arg)) throw new Exception(strval($arg) . ' must be Aspect Object');
+            if (!is_object($arg)) throw new \Exception(strval($arg) . ' must be Aspect Object');
             if($name) {
                 $name .= '_' . $arg->name;
             }else{
@@ -125,6 +156,9 @@ abstract class Base
         return $name;
     }
 
+    /**
+     * @return static[]
+     */
     public static function createFew() {
         $arr = func_get_args();
         $return = array();
@@ -140,6 +174,9 @@ abstract class Base
         return $return;
     }
 
+    /**
+     * @return static[]
+     */
     public static function getFew() {
         $arr = func_get_args();
         $return = array();
@@ -153,5 +190,30 @@ abstract class Base
             $return[] = $obj;
         }
         return $return;
+    }
+
+    /**
+     * @return static[]
+     */
+    public static function getAll() {
+        return static::$objects;
+    }
+
+    public static function filter_array(&$el) {
+        if(is_string($el))
+            $el = sanitize_text_field($el);
+        if(is_array($el)) {
+            array_walk($el, array('static', 'filter_array'));
+            $el = array_filter($el);
+        }
+    }
+
+    public function getOrigin($args = array()) {
+        static $number = 0;
+        $name = static::getName($this).$number++;
+        $origin = new Origin($name);
+        $origin
+            ->setArgument($args);
+        return $origin;
     }
 }

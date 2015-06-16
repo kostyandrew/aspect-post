@@ -16,20 +16,20 @@ class Page extends Base
         });
         add_action('init', function () {
             foreach ($this->attaches as $attach) {
-                if (is_subclass_of($attach,'\Aspect\Page') or $attach instanceof \Aspect\Page) {
+                if (is_a($attach,'\Aspect\Page')) { /* @var $attach \Aspect\Page */
                     $attach->setArgument('parent_slug', self::getName($this));
                     remove_action('admin_menu', array($attach, 'addMenuPage'));
                     add_action('admin_menu', array($attach, 'addSubMenuPage'));
                     continue;
-                } elseif (is_subclass_of($attach, '\Aspect\Box') or $attach instanceof \Aspect\Box) {
+                } elseif (is_a($attach, '\Aspect\Box')) { /* @var $attach \Aspect\Box */
                     $section = $attach;
                 } else {
-                    throw new Exception('Incorrect input parameters');
+                    throw new \Exception('Incorrect input parameters');
                 }
                 add_action('admin_init', function () use ($section) {
                     add_settings_section(self::getName($section, $this), $section->labels['singular_name'], array($section, 'descriptionBox'), self::getName($this));
                 });
-                foreach ($section->attaches as $field) {
+                foreach ($section->attaches as $field) { /* @var $field \Aspect\Input */
                     add_action('admin_init', function () use ($field, $section) {
                         register_setting(self::getName($this), self::getName($field, $section, $this));
                         add_settings_field(self::getName($field, $section, $this), $field->label($this, $section), array($field, 'render'), self::getName($this), self::getName($section, $this), array($this, $section));

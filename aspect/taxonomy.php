@@ -2,7 +2,7 @@
 namespace Aspect;
 class Taxonomy extends Base
 {
-    private $reserved = array(
+    static private $reserved = array(
         'attachment',
         'attachment_id',
         'author',
@@ -80,15 +80,15 @@ class Taxonomy extends Base
     {
         $name = self::getName($this);
 
-        if (!in_array($name, $this->reserved) && !$this->registered) {
-            register_taxonomy($name, (string)$post_type, $this->args);
+        if (!in_array($name, static::$reserved) && !$this->registered) {
+            register_taxonomy($name, (string) $post_type, $this->args);
         } else {
             register_taxonomy_for_object_type($name, $post_type);
         }
 
         if(!$this->registered) {
             foreach ($this->attaches as $attach) {
-                if ((is_subclass_of($attach,'\Aspect\Box') or $attach instanceof \Aspect\Box) and is_admin()) {
+                if (is_a($attach,'\Aspect\Box') and is_admin()) { /* @var $attach \Aspect\Box */
                     add_action(self::getName($this)."_edit_form", function ($term) use ($attach) {
                         $attach->renderCategoryBox($term, 'edit');
                     });
@@ -136,83 +136,42 @@ SQL;
 
     public static function get_term_meta($term_id, $key, $single = false)
     {
-        global $wpdb;
-        $table_name = static::termMetaDbName();
-        $query = <<<SQL
-SELECT * FROM `{$table_name}` WHERE `meta_key` = '{$key}' AND `term_id` = {$term_id}
-SQL;
-        if ($single) {
-            return $wpdb->get_row($query, ARRAY_A)['meta_value'];
-        } else {
-            return $wpdb->get_col($query, 3);
-        }
+        return get_metadata('term', $term_id, $key, $single);
     }
 
     public static function update_term_meta($term_id, $meta_key, $meta_value, $prev_value = '')
     {
-        global $wpdb;
-        if ($prev_value != '') {
-            return $wpdb->update(
-                static::termMetaDbName(),
-                array(
-                    'meta_value' => $meta_value
-                ),
-                array(
-                    'term_id' => $term_id,
-                    'meta_key' => $meta_key,
-                    'meta_value' => $prev_value
-                )
-            );
-        } else {
-            if (static::get_term_meta($term_id, $meta_key)) {
-
-                return $wpdb->update(
-                    static::termMetaDbName(),
-                    array(
-                        'meta_value' => $meta_value
-                    ),
-                    array(
-                        'term_id' => $term_id,
-                        'meta_key' => $meta_key,
-                    )
-                );
-            } else {
-                return $wpdb->insert(
-                    static::termMetaDbName(),
-                    array(
-                        'term_id' => $term_id,
-                        'meta_key' => $meta_key,
-                        'meta_value' => $meta_value
-                    )
-                );
-            }
-        }
-
+        return update_metadata('term', $term_id, $meta_key, $meta_value, $prev_value);
     }
 
     public static function add_term_meta($term_id, $meta_key, $meta_value, $unique = false)
     {
-        global $wpdb;
-        $table_name = static::termMetaDbName();
-        if ($unique) {
-            $sql = <<<SQL
-SELECT count(`meta_id`) FROM `{$table_name}` WHERE `meta_key` = '{$meta_key}' AND `meta_value` = '{$meta_value}'
-SQL;
-
-            $count = $wpdb->get_var($sql);
-            if ($count > 0) return false;
-        }
-        return $wpdb->insert(
-            $table_name,
-            array(
-                'term_id' => $term_id,
-                'meta_key' => $meta_key,
-                'meta_value' => $meta_value
-            )
-        );
+        return add_metadata('term', $term_id, $meta_key, $meta_value, $unique);
     }
 
-    public function get_terms($args) {
+    public function get_terms($args = array()) {
         return get_terms(strval($this), $args);
+    }
+
+    public static function initTermMeta() {
+        global $wpdb;
+        $wpdb->termmeta = static::termMetaDbName();
+    }
+    protected static function init() {
+        static $initialized = false;
+        if(!$initialized) {
+            parent::init();
+            add_action('after_switch_theme', array(get_called_class(), 'createTermMetaDb'));
+            add_action('init', array(get_called_class(), 'initTermMeta'));
+            $initialized = true;
+        }
+    }
+
+    public function getOrigin($args = array()) {
+        $origin = parent::getOrigin($args);
+        $origin
+            ->setArgument('type', 'taxonomy')
+            ->setTaxonomy($this);
+        return $origin;
     }
 }

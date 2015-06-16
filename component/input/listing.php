@@ -25,7 +25,7 @@ trait Listing {
         </style>
         <table width="100%" id="table_<?= $this->nameInput($post, $parent) ?>">
             <tbody>
-            <?php if (!is_array($values)) {
+            <?php if (!is_array($values) or empty($values)) {
                 if (isset($this->labels['before'])) $values[0]['before'] = '';
                 $values[0][0] = '';
                 if (isset($this->labels['after'])) $values[0]['after'] = array('');
