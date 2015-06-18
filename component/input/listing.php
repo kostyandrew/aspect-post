@@ -122,7 +122,7 @@ trait Listing {
                     <?php if(isset($this->args['bold']) && $this->args['bold']) { ?>'<label>Bold item: <input class="bolditem" type="checkbox" name="<?= $this->nameInput($post, $parent) ?>[' + id + '][bold]" value="1"/></label>' + <?php } ?>
                     '<input type="text" name="<?= $this->nameInput($post, $parent) ?>[' + id + '][0]" class="large-text code listing" value="" />' +
                     <?php if(isset($this->labels['after'])): ?>'<hr><input type="text" name="<?= $this->nameInput($post, $parent) ?>[' + id + '][after][0]" placeholder="<?=$this->labels['after']?>" class="large-text code" value=""/>' + <?php endif; ?>
-                    <?php if(isset($this->args['afterMultiply'])): ?>'<input type="button" class="button_after <?= $this->nameInput($post, $parent) ?>" data-row-id="' + id + '" data-last-id="0" value="+">' + <?php endif; ?>
+                    <?php if(isset($this->args['afterMultiply'])): ?>'<input type="button" class="button <?= $this->nameInput($post, $parent) ?>_after" data-row-id="' + id + '" data-last-id="0" value="+">' + <?php endif; ?>
                     '</td>' +
                     <?php if(isset($this->args['multiply']) && $this->args['multiply']): ?>'<td width="40" style="vertical-align: bottom"><input type="button" class="button <?= $this->nameInput($post, $parent) ?>" data-row-id="' + id + '" data-last-id="0" value="+"></td>' + <?php endif; ?>
                     '</tr>');
