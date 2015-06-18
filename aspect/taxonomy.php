@@ -170,7 +170,7 @@ SQL;
     public function getOrigin($args = array()) {
         $origin = parent::getOrigin($args);
         $origin
-            ->setArgument('type', 'taxonomy')
+            ->setType('taxonomy')
             ->setTaxonomy($this);
         return $origin;
     }

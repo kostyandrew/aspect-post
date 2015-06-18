@@ -3,7 +3,7 @@ namespace Aspect;
 class Box extends Base
 {
     public $args = array(
-        'context' => 'advanced',
+        'context' => 'normal',
         'priority' => 'default'
     );
     protected static $objects = array();
@@ -54,7 +54,7 @@ class Box extends Base
             return $post_id;
         }
         foreach ($this->attaches as $input) { /* @var $input \Aspect\Input */
-            list($data, $key_name) = $input->processingData($post_id);
+            list($data, $key_name) = $input->processingData($post_id, $this);
             update_post_meta($post_id, $key_name, $data);
         }
         return $post_id;
@@ -67,7 +67,7 @@ class Box extends Base
         if (!current_user_can('manage_categories'))
             return $term_id;
         foreach ($this->attaches as $input) { /* @var $input \Aspect\Input */
-            list($data, $key_name) = $input->processingData($term_id);
+            list($data, $key_name) = $input->processingData($term_id, $this);
             Taxonomy::update_term_meta($term_id, $key_name, $data);
         }
         return $term_id;

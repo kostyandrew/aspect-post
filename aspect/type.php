@@ -123,7 +123,7 @@ class Type extends Base
     public function getOrigin($args = array()) {
         $origin = parent::getOrigin($args);
         $origin
-            ->setArgument('type', 'post')
+            ->setType('post')
             ->setPostType($this);
         return $origin;
     }

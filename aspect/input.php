@@ -2,9 +2,7 @@
 namespace Aspect;
 class Input extends Base
 {
-    public $args = array(
-        'type' => 'text'
-    );
+    public $type = 'text';
     protected static $objects = array();
 
     /**
@@ -115,7 +113,7 @@ class Input extends Base
 
     public function getType()
     {
-        $type = $this->args['type'];
+        $type = $this->type;
         $name = str_replace(' ', '', ucwords($type));
         if (empty($name)) $name = 'Text';
         return $name;
@@ -223,9 +221,14 @@ class Input extends Base
         } ?>
         <script>
             jQuery(document).ready(function ($) {
-                $('#<?= $this->nameInput($post, $parent) ?>_upload').click(function () {
+                $('#<?= $this->nameInput($post, $parent) ?>_upload').click(function (e) {
+                    e.preventDefault();
                     tb_show('Upload', 'media-upload.php?referer=<?= $this->nameInput($post, $parent) ?>&type=image&TB_iframe=true&post_id=0', false);
-                    return false;
+                });
+                $('#<?= $this->nameInput($post, $parent) ?>_remove').click(function (e) {
+                    e.preventDefault();
+                    $('#<?= $this->nameInput($post, $parent) ?>_src, #<?= $this->nameInput($post, $parent) ?>').val('');
+                    $('#<?= $this->nameInput($post, $parent) ?>_preview img').attr({'src': ''}).hide();
                 });
                 window.send_to_editor = function (html) {
                     var image_url = $('img', html).attr('src');
@@ -238,7 +241,7 @@ class Input extends Base
                     var id = results === null ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
                     $('#' + id).val(id_attach);
                     $('#' + id + '_src').val(image_url);
-                    $('#' + id + '_preview img').attr({'src': image_url});
+                    $('#' + id + '_preview img').attr({'src': image_url}).show();
                     tb_remove();
                 }
             });
@@ -250,6 +253,8 @@ class Input extends Base
                value="<?= $src ?>"/>
         <input id="<?= $this->nameInput($post, $parent) ?>_upload" class="button" type="button"
                value="<?php _e('Upload'); ?>"/>
+        <input id="<?= $this->nameInput($post, $parent) ?>_remove" class="button" type="button"
+               value="<?php _e('Remove'); ?>"/>
         <div id="<?= $this->nameInput($post, $parent) ?>_preview" style="margin-top: 10px">
             <img style="max-width:50%;" src="<?= $src; ?>"/>
         </div>
@@ -272,10 +277,10 @@ class Input extends Base
         }
     }
 
-    public function processingData($elem_id)
+    public function processingData($elem_id, $parent)
     {
         $data = null;
-        $key_name = $this->nameInput(null, $this);
+        $key_name = $this->nameInput(null, $parent);
         $data = $_POST[$key_name];
         $data = call_user_func_array(array($this, 'saveBefore'), array($data, $key_name, $elem_id));
         if (is_string($data))
@@ -300,6 +305,12 @@ class Input extends Base
             call_user_func_array($this->args['saveAfter'], array($data, $key_name, $elem_id));
         $data = apply_filters_ref_array('\Aspect\Input\saveAfter', array($data, $this, $key_name, $elem_id));
         return $data;
+    }
+
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
     }
 
     public function setOrigin($origin)
