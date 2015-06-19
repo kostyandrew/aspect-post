@@ -7,7 +7,7 @@ abstract class Base
     protected $name;
     public $args = array();
     public $labels = array();
-    protected $attaches = array();
+    public $attaches = array();
     protected static $objects = array();
 
     /**
@@ -48,7 +48,7 @@ abstract class Base
      * @return static
      * @throws \Exception
      */
-    public static function getObject($name)
+    public static function get($name)
     {
         $re_name = str_replace(' ', '_', $name);
         if (isset(static::$objects[$re_name])) {
@@ -182,10 +182,10 @@ abstract class Base
         $return = array();
         foreach ($arr as $name => $args) {
             if (is_array($args)) {
-                $obj = static::getObject($name);
+                $obj = static::get($name);
                 $obj->args = array_merge($obj->args, $args);
             } else {
-                $obj = static::getObject($args);
+                $obj = static::get($args);
             }
             $return[] = $obj;
         }

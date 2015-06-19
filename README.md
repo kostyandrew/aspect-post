@@ -36,6 +36,12 @@ $text_color = new Input('text color');
 $text_color
   ->attachTo($slides_settings) // metabox
   ->attach('white', 'black') // values for select
-  ->setArgument('type', 'select') // type of input
+  ->setType('select') // type of input
   ->setArgument('default', 'black'); // default
+```
+
+
+### Get value of metabox field: ###
+```php
+$text_color = Input::get('text color')->getValue($slide_id, 'attr', Box::get('slide setting'));
 ```
