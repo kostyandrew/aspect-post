@@ -6,6 +6,9 @@ trait Listing {
         $values = $this->getValue($parent, null, $post);
         ?>
         <style>
+            #table_<?= $this->nameInput($post, $parent) ?> .large-text {
+                width: 100%;
+            }
             #table_<?= $this->nameInput($post, $parent) ?> tr td:first-child {
                 border: 1px solid #eee;
                 padding: 5px;
