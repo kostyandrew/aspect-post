@@ -41,7 +41,7 @@ class Template extends Base
         $name = self::getName($this);
         if (get_query_var($name)) {
             $this->requested = true;
-            self::$isRequested = true;
+            self::$isRequested = $name;
             add_filter('template_include', function () use ($name) {
                 if (isset($this->args['template']))
                     return get_template_directory() . '/pages/' . $this->args['template'] . '.php';
