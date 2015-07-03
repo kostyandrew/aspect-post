@@ -40,7 +40,7 @@ class Template extends Base
     {
         $name = self::getName($this);
         if (get_query_var($name)) {
-            $this->requested = $name;
+            $this->requested = true;
             self::$isRequested = true;
             add_filter('template_include', function () use ($name) {
                 if (isset($this->args['template']))

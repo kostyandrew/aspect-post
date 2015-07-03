@@ -132,7 +132,7 @@ trait AndText
                 $(document).on('click', '.<?= $this->nameInput($post, $parent) ?>_delete', function () {
                     $(this).closest('tr').hide();
                     $(this).closest('tr').find('input, select').each(function () {
-                        $(this).removeAttr('name');
+                        $(this).attr('disabled', 'disabled');
                     });
                 });
             });
