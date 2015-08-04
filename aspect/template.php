@@ -39,7 +39,7 @@ class Template extends Base
     public function registerTemplate()
     {
         $name = self::getName($this);
-        if (get_query_var($name)) {
+        if (static::isset_query_var($name)) {
             $this->requested = true;
             self::$isRequested = $name;
             add_filter('template_include', function () use ($name) {
@@ -59,6 +59,10 @@ class Template extends Base
                 return $classes;
             });
         }
+    }
+    static public function isset_query_var($name) {
+        $array = $GLOBALS['wp_query']->query_vars;
+        return array_key_exists($name, $array);
     }
 
     public function getVar()
