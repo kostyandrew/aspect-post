@@ -58,6 +58,9 @@ abstract class Base
         throw new \Exception(get_called_class() . ' with ' . $name . ' not found');
     }
 
+    public static function set($name) {
+        return new static($name);
+    }
 
     /**
      * @return static

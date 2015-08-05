@@ -74,11 +74,18 @@ class Template extends Base
     public function link($param = null)
     {
         $name = self::getName($this);
-        if ($param == null) $param = $name;
         if (self::$isPrettyLinkStructure) {
-            $link = home_url() . '/' . $name . '/' . $param;
+            if($param == null) {
+                $link = home_url() . '/' . $name;
+            }else{
+                $link = home_url() . '/' . $name . '/' . $param;
+            }
         } else {
-            $link = home_url() . '/?' . $name . '=' . $param;
+            if($param == null) {
+                $link = home_url() . '/?' . $name;
+            }else{
+                $link = home_url() . '/?' . $name . '=' . $param;
+            }
         }
         return $link;
     }
