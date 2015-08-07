@@ -179,6 +179,15 @@ class Input extends Base
                value="<?= $value ?>"/>
     <?php
     }
+    public function htmlTextArea($post, $parent)
+    {
+        $value = $this->getValue($parent, 'attr', $post);
+        ?>
+        <textarea class="large-text code" type="text"
+               name="<?= $this->nameInput($post, $parent) ?>"
+               id="<?= $this->nameInput($post, $parent) ?>"><?= $value ?></textarea>
+    <?php
+    }
 
     public function htmlColor($post, $parent)
     {
