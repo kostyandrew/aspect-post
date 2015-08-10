@@ -302,16 +302,22 @@ class Input extends Base
 
     public function saveBefore($data, $key_name, $elem_id)
     {
+        $name = $this->getType();
+        if (method_exists($this, 'saveBefore'.$name))
+            call_user_func_array(array($this,'saveBefore'.$name), array(&$data));
         if (isset($this->args['saveBefore']) && is_callable($this->args['saveBefore']))
-            call_user_func_array($this->args['saveBefore'], array($data, $key_name, $elem_id));
+            call_user_func_array($this->args['saveBefore'], array(&$data, $key_name, $elem_id));
         $data = apply_filters_ref_array('\Aspect\Input\saveBefore', array($data, $this, $key_name, $elem_id));
         return $data;
     }
 
     public function saveAfter($data, $key_name, $elem_id)
     {
+        $name = $this->getType();
+        if (method_exists($this, 'saveAfter'.$name))
+            call_user_func_array(array($this,'saveAfter'.$name), array(&$data));
         if (isset($this->args['saveAfter']) && is_callable($this->args['saveAfter']))
-            call_user_func_array($this->args['saveAfter'], array($data, $key_name, $elem_id));
+            call_user_func_array($this->args['saveAfter'], array(&$data, $key_name, $elem_id));
         $data = apply_filters_ref_array('\Aspect\Input\saveAfter', array($data, $this, $key_name, $elem_id));
         return $data;
     }

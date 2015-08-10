@@ -63,6 +63,7 @@ trait AndText
                     ?>
                     <td><select class="large-text <?= $this->nameInput($post, $parent) ?>_select"
                                 name="<?= $this->nameInput($post, $parent) ?>[<?= $row_id ?>][select]">
+                            <option value="0">None</option>
                             <?php foreach ($select as $option) {
                                 if (is_array($option)) { ?>
                                     <option <?php $this->selected($row['select'], esc_attr($option[0])); ?>
@@ -138,4 +139,10 @@ trait AndText
             });
         </script>
     <?php }
+
+    protected function saveBeforeSelectAndText(&$data) {
+        foreach($data as $id => $line) {
+            if($line['select'] == 0) $data[$id] = null;
+        }
+    }
 }
