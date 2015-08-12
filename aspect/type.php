@@ -104,12 +104,12 @@ class Type extends Base
         $name = self::getName($this);
         if (!in_array($name, static::$reserved) && !$this->registered)
             register_post_type($name, $this->args);
-
+        $object = $this;
         foreach ($this->attaches as $attach) {
             if (is_a($attach, '\Aspect\Box') and is_admin()) { /* @var $attach \Aspect\Box */
                 add_action("save_post", array($attach, 'savePostBox'));
-                add_action("add_meta_boxes", function () use ($attach) {
-                    add_meta_box(self::getName($attach), $attach->labels['singular_name'], array($attach, 'renderBox'), (string)$this, $attach->args['context'], $attach->args['priority']);
+                add_action("add_meta_boxes", function () use ($attach, $object) {
+                    add_meta_box($object::getName($attach), $attach->labels['singular_name'], array($attach, 'renderBox'), (string)$object, $attach->args['context'], $attach->args['priority']);
                 });
             }
             // create meta box in admin panel only

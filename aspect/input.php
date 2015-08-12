@@ -127,7 +127,6 @@ class Input extends Base
             throw new \Exception('Input type with ' . $name . ' not found');
 
         call_user_func_array(array($this, $method), array($post, $parent));
-        $this->description();
     }
 
     public function nameInput($post, $parent)
@@ -219,7 +218,8 @@ class Input extends Base
 
     {
         $value = $this->getValue($parent, 'html', $post);
-        $src = wp_get_attachment_image_src($value, 'full')[0];
+        $src_data = wp_get_attachment_image_src($value, 'full');
+        $src = $src_data[0];
         static $calling = false;
         if (!$calling) {
             wp_enqueue_script('jquery');
@@ -297,7 +297,7 @@ class Input extends Base
         if (is_array($data))
             call_user_func_array(array('static', 'filter_array'), array(&$data));
         $data = call_user_func_array(array($this, 'saveAfter'), array($data, $key_name, $elem_id));
-        return [$data, $key_name];
+        return array($data, $key_name);
     }
 
     public function saveBefore($data, $key_name, $elem_id)
@@ -333,9 +333,10 @@ class Input extends Base
         if (!is_a($origin, '\Aspect\Origin'))
             throw new \Exception(strval($origin) . ' is not valid origin');
         /* @var $origin \Aspect\Origin */
-        add_action('init', function () use ($origin) {
+        $object = $this;
+        add_action('init', function () use ($origin, $object) {
             $attaches = $origin->returnOrigin();
-            $this->attachFew($attaches);
+            $object->attachFew($attaches);
         });
         return $this;
     }

@@ -20,7 +20,6 @@ class Template extends Base
         parent::init();
         if (!$initialized) {
             static::$isPrettyLinkStructure = (get_option('permalink_structure') !== '');
-
             $initialized = true;
         }
     }
@@ -31,9 +30,12 @@ class Template extends Base
         add_rewrite_tag('%' . $name . '%', '([^&].+)');
         if (self::$isPrettyLinkStructure and (isset($this->args['paged']) and $this->args['paged'])) {
             add_rewrite_rule('^' . $name . '/([^/]*)/page/([^/]*)/?', 'index.php?' . $name . '=$matches[1]&paged=$matches[2]', 'top');
+            add_rewrite_rule('^' . $name .'/page/([^/]*)/?' ,'index.php?' . $name . '&paged=$matches[1]', 'top');
         }
-        if (self::$isPrettyLinkStructure)
+        if (self::$isPrettyLinkStructure) {
             add_rewrite_rule('^' . $name . '/([^/]*)/?', 'index.php?' . $name . '=$matches[1]', 'top');
+            add_rewrite_rule('^' . $name .'/?' , 'index.php?' . $name , 'top');
+        }
     }
 
     public function registerTemplate()
@@ -42,25 +44,28 @@ class Template extends Base
         if (static::isset_query_var($name)) {
             $this->requested = true;
             self::$isRequested = $name;
-            add_filter('template_include', function () use ($name) {
-                if (isset($this->args['template']))
-                    return get_template_directory() . '/pages/' . $this->args['template'] . '.php';
+            $object = $this;
+            add_filter('template_include', function () use ($name, $object) {
+                if (isset($object->args['template']))
+                    return get_template_directory() . '/pages/' . $object->args['template'] . '.php';
                 return get_template_directory() . '/pages/' . $name . '.php';
             });
-            add_filter('wp_title', function ($title) {
-                return str_replace(get_bloginfo('name', 'display'), $this->labels['singular_name'], $title);
+            add_filter('wp_title', function ($title) use($object) {
+                return str_replace(get_bloginfo('name', 'display'), $object->labels['singular_name'], $title);
             });
-            add_filter('body_class', function ($classes) use ($name) {
-                if (isset($this->args['+class']))
-                    $classes = array_merge($classes, $this->args['+class']);
-                if (isset($this->args['-class']))
-                    $classes = array_diff($classes, $this->args['-class']);
+            add_filter('body_class', function ($classes) use ($name, $object) {
+                if (isset($object->args['+class']))
+                    $classes = array_merge($classes, $object->args['+class']);
+                if (isset($object->args['-class']))
+                    $classes = array_diff($classes, $object->args['-class']);
                 $classes[] = $name;
                 return $classes;
             });
         }
     }
-    static public function isset_query_var($name) {
+    public function isset_query_var($name = null) {
+        if($name === null)
+            $name = self::getName($this);
         $array = $GLOBALS['wp_query']->query_vars;
         return array_key_exists($name, $array);
     }

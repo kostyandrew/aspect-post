@@ -7,17 +7,18 @@ class Page extends Base
     public function __construct($name)
     {
         parent::__construct($name);
-        add_action('admin_menu', function () {
-            if (isset($this->args['parent_slug'])) {
-                call_user_func(array($this, 'addSubMenuPage'));
+        $object = $this;
+        add_action('admin_menu', function () use($object) {
+            if (isset($object->args['parent_slug'])) {
+                call_user_func(array($object, 'addSubMenuPage'));
             } else {
-                call_user_func(array($this, 'addMenuPage'));
+                call_user_func(array($object, 'addMenuPage'));
             }
         });
-        add_action('init', function () {
-            foreach ($this->attaches as $attach) {
+        add_action('init', function () use($object) {
+            foreach ($object->attaches as $attach) {
                 if (is_a($attach,'\Aspect\Page')) { /* @var $attach \Aspect\Page */
-                    $attach->setArgument('parent_slug', self::getName($this));
+                    $attach->setArgument('parent_slug', $object::getName($object));
                     remove_action('admin_menu', array($attach, 'addMenuPage'));
                     add_action('admin_menu', array($attach, 'addSubMenuPage'));
                     continue;
@@ -26,13 +27,13 @@ class Page extends Base
                 } else {
                     throw new \Exception('Incorrect input parameters');
                 }
-                add_action('admin_init', function () use ($section) {
-                    add_settings_section(self::getName($section, $this), $section->labels['singular_name'], array($section, 'descriptionBox'), self::getName($this));
+                add_action('admin_init', function () use ($section, $object) {
+                    add_settings_section($object::getName($section, $object), $section->labels['singular_name'], array($section, 'descriptionBox'), $object::getName($object));
                 });
                 foreach ($section->attaches as $field) { /* @var $field \Aspect\Input */
-                    add_action('admin_init', function () use ($field, $section) {
-                        register_setting(self::getName($this), self::getName($field, $section, $this));
-                        add_settings_field(self::getName($field, $section, $this), $field->label($this, $section), array($field, 'render'), self::getName($this), self::getName($section, $this), array($this, $section));
+                    add_action('admin_init', function () use ($field, $section, $object) {
+                        register_setting($object::getName($object), $object::getName($field, $section, $object));
+                        add_settings_field($object::getName($field, $section, $object), $field->label($object, $section), array($field, 'render'), $object::getName($object), $object::getName($section, $object), array($object, $section));
                     });
                 }
             }
