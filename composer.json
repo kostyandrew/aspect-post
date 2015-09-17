@@ -1,5 +1,6 @@
 {
   "name": "ammorium/ASPECT-Post",
   "type": "wordpress-plugin",
-  "version": "1.1b"
+  "version": "1.1b",
+  "prefer-stable": true
 }
