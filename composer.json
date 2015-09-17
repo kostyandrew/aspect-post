@@ -1,6 +1,12 @@
 {
   "name": "ammorium/aspect-post",
   "type": "wordpress-plugin",
-  "version": "1.1b",
-  "minimum-stability": "stable"
+  "description": "test",
+  "version": "dev-master",
+  "minimum-stability": "dev",
+  "autoload"    : {
+        "classmap": [
+            "/"
+        ]
+    }
 }
