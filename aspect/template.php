@@ -37,13 +37,16 @@ class Template extends Base
             add_rewrite_rule('^' . $name . '/([^/]*)/?', 'index.php?' . $name . '=$matches[1]', 'top');
     }
     public function registerWP() {
+        global $wp_query;
         $name = self::getName($this);
         if (static::isset_query_var($name)) {
+            $wp_query->is_front_page = false;
+            $wp_query->is_home = false;
             $this->requested = true;
             self::$isRequested = $name;
             add_filter('wp_title', function ($title) {
                 return preg_replace('/'.get_bloginfo('name', 'display').'/', $this->labels['singular_name'], $title, 1);
-            });
+            }, 20);
             add_filter('body_class', function ($classes) use ($name) {
                 if (isset($this->args['+class']))
                     $classes = array_merge($classes, $this->args['+class']);
