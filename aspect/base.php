@@ -16,6 +16,7 @@ abstract class Base
      */
     public function __construct($name)
     {
+        $this->grey_name = $name;
         $this->name = esc_attr(str_replace(' ', '_', $name));
         if (isset(static::$objects[$this->name])) throw new \Exception(get_called_class() . ' with ' . $name . ' already exists');
         static::$objects[$this->name] = $this;
