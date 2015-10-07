@@ -44,9 +44,11 @@ class Template extends Base
             $wp_query->is_home = false;
             $this->requested = true;
             self::$isRequested = $name;
-            add_filter('wp_title', function ($title) {
-                return preg_replace('/'.get_bloginfo('name', 'display').'/', $this->labels['singular_name'], $title, 1);
-            }, 20);
+            add_filter('wp_title', function ($old_title, $sep, $seplocation) use($name) {
+                $title = preg_replace('/'.get_bloginfo('name', 'display').'/', $this->labels['singular_name'], $old_title, 1);
+                $title = apply_filters('wp_title_'.$name, $title, $old_title, $name, $sep, $seplocation);
+                return $title;
+            }, 20, 3);
             add_filter('body_class', function ($classes) use ($name) {
                 if (isset($this->args['+class']))
                     $classes = array_merge($classes, $this->args['+class']);
@@ -60,7 +62,7 @@ class Template extends Base
     public function registerTemplate()
     {
         $name = self::getName($this);
-        if ($this->requested) {
+        if ($this->requested && !is_404()) {
             add_filter('template_include', function () use ($name) {
                 if (isset($this->args['template']))
                     return get_template_directory() . '/pages/' . $this->args['template'] . '.php';
