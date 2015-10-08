@@ -50,6 +50,8 @@ class Template extends Base
                 return $title;
             }, 20, 3);
             add_filter('body_class', function ($classes) use ($name) {
+                if(is_404())
+                    return $classes;
                 if (isset($this->args['+class']))
                     $classes = array_merge($classes, $this->args['+class']);
                 if (isset($this->args['-class']))
@@ -62,7 +64,7 @@ class Template extends Base
     public function registerTemplate()
     {
         $name = self::getName($this);
-        if ($this->requested && !is_404()) {
+        if ($this->requested && (!is_404() or (isset($this->args['ignore_404']) && $this->args['ignore_404']))) {
             add_filter('template_include', function () use ($name) {
                 if (isset($this->args['template']))
                     return get_template_directory() . '/pages/' . $this->args['template'] . '.php';
