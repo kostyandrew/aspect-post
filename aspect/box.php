@@ -2,16 +2,17 @@
 namespace Aspect;
 class Box extends Base
 {
+    protected static $objects = array();
     public $args = array(
         'context' => 'normal',
         'priority' => 'default'
     );
-    protected static $objects = array();
 
     public function renderBox($post)
     {
         wp_nonce_field(self::getName($this), self::getName($this));
-        foreach ($this->attaches as $input) { /* @var $input \Aspect\Input */
+        foreach ($this->attaches as $input) {
+            /* @var $input \Aspect\Input */
             $input->render($post, $this);
         }
     }
@@ -53,7 +54,8 @@ class Box extends Base
         } elseif (!current_user_can('edit_post', $post_id)) {
             return $post_id;
         }
-        foreach ($this->attaches as $input) { /* @var $input \Aspect\Input */
+        foreach ($this->attaches as $input) {
+            /* @var $input \Aspect\Input */
             list($data, $key_name) = $input->processingData($post_id, $this);
             update_post_meta($post_id, $key_name, $data);
         }
@@ -66,9 +68,14 @@ class Box extends Base
             return $term_id;
         if (!current_user_can('manage_categories'))
             return $term_id;
-        foreach ($this->attaches as $input) { /* @var $input \Aspect\Input */
+        foreach ($this->attaches as $input) {
+            /* @var $input \Aspect\Input */
             list($data, $key_name) = $input->processingData($term_id, $this);
-            Taxonomy::update_term_meta($term_id, $key_name, $data);
+            if (get_bloginfo('version') >= 4.4) {
+                update_term_meta($term_id, $key_name, $data);
+            } else {
+                Taxonomy::update_term_meta($term_id, $key_name, $data);
+            }
         }
         return $term_id;
     }

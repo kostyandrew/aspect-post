@@ -1,6 +1,6 @@
 <?php
 namespace Aspect;
-if(!defined('ASPECT_PREFIX')) define('ASPECT_PREFIX', 'aspect');
+if(!defined('ASPECT_PREFIX')) define('ASPECT_PREFIX', '');
 
 abstract class Base
 {
@@ -66,7 +66,7 @@ abstract class Base
     /**
      * @return static
      */
-    public function setArgument($args, $data = null)
+    public function setArgument($args, $data = true)
     {
         if (is_array($args)) {
             $this->args = array_merge($this->args, $args);

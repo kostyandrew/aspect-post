@@ -2,8 +2,8 @@
 namespace Aspect;
 class Input extends Base
 {
-    public $type = 'text';
     protected static $objects = array();
+    public $type = 'text';
 
     /**
      * @return static[]
@@ -21,6 +21,108 @@ class Input extends Base
         return call_user_func_array(array('static', 'getFew'), func_get_args());
     }
 
+    public function render()
+    {
+        if (func_num_args() === 1) {
+            list($post, $parent) = func_get_arg(0);
+        } else {
+            list($post, $parent) = func_get_args();
+        }
+        if ($post instanceof \WP_Post) :
+            ?>
+            <div>
+                <?php if (!isset($this->args['hide_label']) or !$this->args['hide_label'])
+                    echo $this->label($post, $parent) . '<br>'; ?>
+                <?php $this->renderInput($post, $parent); ?>
+            </div>
+        <?php endif;
+        if (is_a($post, '\Aspect\Page')) :
+            $this->renderInput($post, $parent);
+        endif;
+        if (($post instanceof \stdClass || $post instanceof \WP_Term) && isset($post->taxonomy) && isset($post->term_id)) { ?>
+            <tr class="form-field">
+                <?php if (!isset($this->args['hide_label']) or !$this->args['hide_label'])
+                    echo '<th scope="row">' . $this->label($post, $parent) . '</th>'; ?>
+                <td colspan="<?= (!isset($this->args['hide_label']) or !$this->args['hide_label']) ? 1 : 2; ?>">
+                    <?php $this->renderInput($post, $parent); ?>
+                    <?php $this->description(); ?>
+                </td>
+            </tr>
+        <?php }
+        if (($post instanceof \stdClass || $post instanceof \WP_Term) && isset($post->taxonomy) && !isset($post->term_id)) {
+            ?>
+            <div class="form-field">
+                <?php if (!isset($this->args['hide_label']) or !$this->args['hide_label'])
+                    echo $this->label($post, $parent); ?>
+                <?php $this->renderInput($post, $parent); ?>
+                <?php $this->description(); ?>
+            </div>
+        <?php }
+    }
+
+    public function label($post, $parent)
+    {
+        return '<label for="' . $this->nameInput($post, $parent) . '">' . $this->labels['singular_name'] . '</label>';
+    }
+
+    public function nameInput($post, $parent)
+    {
+        if (is_a($post, '\Aspect\Page')) return self::getName($this, $parent, $post);
+        return self::getName($this, $parent);
+    }
+
+    public function renderInput($post, $parent)
+    {
+        $name = $this->getType();
+        $method = 'html' . $name;
+        if (!method_exists($this, $method))
+            throw new \Exception('Input type with ' . $name . ' not found');
+
+        call_user_func_array(array($this, $method), array($post, $parent));
+    }
+
+    public function getType()
+    {
+        $type = $this->type;
+        $name = str_replace(' ', '', ucwords($type));
+        if (empty($name)) $name = 'Text';
+        return $name;
+    }
+
+    public function setType($type)
+    {
+        $this->type = $type;
+        return $this;
+    }
+
+    public function description()
+    {
+        if (isset($this->args['description'])) echo '<p class="description">' . $this->args['description'] . '</p>';
+    }
+
+    public function htmlSelect($post, $parent)
+    {
+        $value = $this->getValue($parent, null, $post);
+        ?>
+        <select
+            name="<?= $this->nameInput($post, $parent) ?><?php if (isset($this->args['multiply']) && $this->args['multiply']) echo '[]'; ?>" <?php if (isset($this->args['multiply']) && $this->args['multiply']) echo 'multiple'; ?>
+            id="<?= $this->nameInput($post, $parent) ?>">
+            <?php
+            foreach ($this->attaches as $option) {
+                if (is_array($option)) { ?>
+                    <option <?php $this->selected($value, esc_attr($option[0])); ?>
+                        value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
+                <?php } else { ?>
+                    <option <?php $this->selected($value, esc_attr($option)); ?>
+                        value="<?= esc_attr($option) ?>"><?= ucfirst(esc_html($option)) ?></option>
+                    <?php
+                }
+            }
+            ?>
+        </select>
+        <?php
+    }
+
     public function getValue($parent, $esc = null, $post = null)
     {
         if ($post === null)
@@ -35,8 +137,10 @@ class Input extends Base
         if (is_a($post, '\Aspect\Page')) {
             $value = get_option($this->nameInput($post, $parent));
         }
-        if ($post instanceof \stdClass && isset($post->taxonomy)) {
-            if (isset($post->term_id)) {
+        if (($post instanceof \stdClass || $post instanceof \WP_Term) && isset($post->taxonomy)) {
+            if (get_bloginfo('version') >= 4.4 && isset($post->term_id)) {
+                $value = get_term_meta($post->term_id, $this->nameInput($post, $parent), true);
+            } else if (isset($post->term_id)) {
                 $value = Taxonomy::get_term_meta($post->term_id, $this->nameInput($post, $parent), true);
             } else {
                 $value = null;
@@ -55,84 +159,13 @@ class Input extends Base
         } elseif (is_array($default) and !isset($default['scalar'])) {
             $default = null;
         }
-        if (!$value and isset($default)) $value = $default;
+        if (!isset($value) and isset($default)) $value = $default;
         if (empty($esc) or $esc == null) {
             return $value;
         } else {
             if (!function_exists('esc_' . $esc)) throw new Exception('Escape function with name ' . $esc . ' not exists!');
             return call_user_func_array('esc_' . $esc, array($value));
         }
-    }
-
-    public function label($post, $parent)
-    {
-        return '<label for="' . $this->nameInput($post, $parent) . '">' . $this->labels['singular_name'] . '</label>';
-    }
-
-    public function description()
-    {
-        if (isset($this->args['description'])) echo '<p class="description">' . $this->args['description'] . '</p>';
-    }
-
-    public function render()
-    {
-        if (func_num_args() === 1) {
-            list($post, $parent) = func_get_arg(0);
-        } else {
-            list($post, $parent) = func_get_args();
-        }
-        if ($post instanceof \WP_Post) :
-            ?>
-            <div>
-                <?= $this->label($post, $parent); ?>
-                <br>
-                <?php $this->renderInput($post, $parent);?>
-            </div>
-        <?php endif;
-        if (is_a($post, '\Aspect\Page')) :
-            $this->renderInput($post, $parent);
-        endif;
-        if ($post instanceof \stdClass && isset($post->taxonomy) && isset($post->term_id)) { ?>
-            <tr class="form-field">
-                <th scope="row"><?= $this->label($post, $parent); ?></th>
-                <td>
-                    <?php $this->renderInput($post, $parent); ?>
-                    <?php $this->description(); ?>
-                </td>
-            </tr>
-        <?php }
-        if ($post instanceof \stdClass && isset($post->taxonomy) && !isset($post->term_id)) {
-            ?>
-            <div class="form-field">
-                <?= $this->label($post, $parent); ?>
-                <?php $this->renderInput($post, $parent); ?>
-                <?php $this->description(); ?>
-            </div>
-        <?php }
-    }
-
-    public function getType()
-    {
-        $type = $this->type;
-        $name = str_replace(' ', '', ucwords($type));
-        if (empty($name)) $name = 'Text';
-        return $name;
-    }
-
-    public function renderInput($post, $parent)
-    {
-        $name = $this->getType();
-        $method = 'html' . $name;
-        if (!method_exists($this, $method))
-            throw new \Exception('Input type with ' . $name . ' not found');
-
-        call_user_func_array(array($this, $method), array($post, $parent));
-    }
-
-    public function nameInput($post, $parent)
-    {
-        if (is_a($post, '\Aspect\Page')) return self::getName($this, $parent, $post);
-        return self::getName($this, $parent);
     }
 
     public function selected($selected, $current)
@@ -145,29 +178,6 @@ class Input extends Base
         }
     }
 
-    public function htmlSelect($post, $parent)
-    {
-        $value = $this->getValue($parent, null, $post);
-        ?>
-        <select
-            name="<?= $this->nameInput($post, $parent) ?><?php if (isset($this->args['multiply']) && $this->args['multiply']) echo '[]'; ?>" <?php if (isset($this->args['multiply']) && $this->args['multiply']) echo 'multiple'; ?>
-            id="<?= $this->nameInput($post, $parent) ?>">
-            <?php
-            foreach ($this->attaches as $option) {
-                if (is_array($option)) { ?>
-                    <option <?php $this->selected($value, esc_attr($option[0])); ?>
-                        value="<?= esc_attr($option[0]) ?>"><?= esc_html($option[1]) ?></option>
-                <?php } else { ?>
-                    <option <?php $this->selected($value, esc_attr($option)); ?>
-                        value="<?= esc_attr($option) ?>"><?= ucfirst(esc_html($option)) ?></option>
-                <?php
-                }
-            }
-            ?>
-        </select>
-    <?php
-    }
-
     public function htmlText($post, $parent)
     {
         $value = $this->getValue($parent, 'attr', $post);
@@ -176,16 +186,17 @@ class Input extends Base
                name="<?= $this->nameInput($post, $parent) ?>"
                id="<?= $this->nameInput($post, $parent) ?>"
                value="<?= $value ?>"/>
-    <?php
+        <?php
     }
+
     public function htmlTextArea($post, $parent)
     {
         $value = $this->getValue($parent, 'attr', $post);
         ?>
         <textarea class="large-text code" type="text"
-               name="<?= $this->nameInput($post, $parent) ?>"
-               id="<?= $this->nameInput($post, $parent) ?>"><?= $value ?></textarea>
-    <?php
+                  name="<?= $this->nameInput($post, $parent) ?>"
+                  id="<?= $this->nameInput($post, $parent) ?>"><?= $value ?></textarea>
+        <?php
     }
 
     public function htmlColor($post, $parent)
@@ -211,7 +222,7 @@ class Input extends Base
                id="<?= $this->nameInput($post, $parent) ?>" class="<?= ASPECT_PREFIX ?>-color-picker"
                value="<?= $value ?>"/>
 
-    <?php
+        <?php
     }
 
     public function htmlMedia($post, $parent)
@@ -281,7 +292,24 @@ class Input extends Base
                 <label><input type="radio" <?php checked($value, esc_attr($option)); ?>
                               name="<?= $this->nameInput($post, $parent) ?>"
                               value="<?= esc_attr($option) ?>">&nbsp;<?= ucfirst(esc_html($option)) ?></label>
-            <?php
+                <?php
+            }
+        }
+    }
+
+    public function htmlCheckbox($post, $parent)
+    {
+        $value = $this->getValue($parent, 'attr', $post);
+        foreach ($this->attaches as $option) {
+            if (is_array($option)) { ?>
+                <label><input type="checkbox" <?php checked($value, esc_attr($option[0])); ?>
+                              name="<?= $this->nameInput($post, $parent) ?>"
+                              value="<?= esc_attr($option[0]) ?>">&nbsp;<?= esc_html($option[1]) ?></label>
+            <?php } else { ?>
+                <label><input type="checkbox" <?php checked($value, esc_attr($option)); ?>
+                              name="<?= $this->nameInput($post, $parent) ?>"
+                              value="<?= esc_attr($option) ?>">&nbsp;<?= ucfirst(esc_html($option)) ?></label>
+                <?php
             }
         }
     }
@@ -303,8 +331,8 @@ class Input extends Base
     public function saveBefore($data, $key_name, $elem_id)
     {
         $name = $this->getType();
-        if (method_exists($this, 'saveBefore'.$name))
-            call_user_func_array(array($this,'saveBefore'.$name), array(&$data));
+        if (method_exists($this, 'saveBefore' . $name))
+            call_user_func_array(array($this, 'saveBefore' . $name), array(&$data));
         if (isset($this->args['saveBefore']) && is_callable($this->args['saveBefore']))
             call_user_func_array($this->args['saveBefore'], array(&$data, $key_name, $elem_id));
         $data = apply_filters_ref_array('\Aspect\Input\saveBefore', array($data, $this, $key_name, $elem_id));
@@ -314,18 +342,12 @@ class Input extends Base
     public function saveAfter($data, $key_name, $elem_id)
     {
         $name = $this->getType();
-        if (method_exists($this, 'saveAfter'.$name))
-            call_user_func_array(array($this,'saveAfter'.$name), array(&$data));
+        if (method_exists($this, 'saveAfter' . $name))
+            call_user_func_array(array($this, 'saveAfter' . $name), array(&$data));
         if (isset($this->args['saveAfter']) && is_callable($this->args['saveAfter']))
             call_user_func_array($this->args['saveAfter'], array(&$data, $key_name, $elem_id));
         $data = apply_filters_ref_array('\Aspect\Input\saveAfter', array($data, $this, $key_name, $elem_id));
         return $data;
-    }
-
-    public function setType($type)
-    {
-        $this->type = $type;
-        return $this;
     }
 
     public function setOrigin($origin)
