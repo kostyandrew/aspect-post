@@ -172,7 +172,7 @@ SQL;
         static $initialized = false;
         if (!$initialized) {
             parent::init();
-            if (get_bloginfo('version') < 4.4 or 1) {
+            if (get_bloginfo('version') < 4.4) {
                 add_action('after_switch_theme', array(get_called_class(), 'createTermMetaDb'));
                 add_action('init', array(get_called_class(), 'initTermMeta'));
             }
