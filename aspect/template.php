@@ -2,6 +2,9 @@
 namespace Aspect;
 class Template extends Base
 {
+    public $args = array(
+        'valued' => true,
+    );
     public $requested = false;
     public static $isRequested = false;
     public static $isPrettyLinkStructure = false;
@@ -31,10 +34,17 @@ class Template extends Base
         $name = self::getName($this);
         add_rewrite_tag('%' . $name . '%', '([^&].+)');
         if (self::$isPrettyLinkStructure and (isset($this->args['paged']) and $this->args['paged'])) {
-            add_rewrite_rule('^' . $name . '/([^/]*)/page/([^/]*)/?', 'index.php?' . $name . '=$matches[1]&paged=$matches[2]', 'top');
+            if(isset($this->args['valued']) && $this->args['valued']) {
+                add_rewrite_rule('^' . $name . '/([^/]*)/page/([^/]*)/?', 'index.php?' . $name . '=$matches[1]&paged=$matches[2]', 'top');
+            }
+            add_rewrite_rule('^' . $name .'/page/([^/]*)/?' ,'index.php?' . $name . '&paged=$matches[1]', 'top');
         }
-        if (self::$isPrettyLinkStructure)
-            add_rewrite_rule('^' . $name . '/([^/]*)/?', 'index.php?' . $name . '=$matches[1]', 'top');
+        if (self::$isPrettyLinkStructure) {
+            if(isset($this->args['valued']) && $this->args['valued']) {
+                add_rewrite_rule('^' . $name . '/([^/]*)/?', 'index.php?' . $name . '=$matches[1]', 'top');
+            }
+            add_rewrite_rule('^' . $name .'/?' , 'index.php?' . $name , 'top');
+        }
     }
     public function registerWP() {
         global $wp_query;
