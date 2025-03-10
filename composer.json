@@ -2,7 +2,7 @@
 	"name": "kostyandrew/aspect-post",
 	"type": "wordpress-plugin",
 	"description": "PHP Class for WordPress which help create type of post, taxonomies and metabox",
-	"minimum-stability": "dev",
+	"minimum-stability": "stable",
 	"license": "MIT",
 	"require": {
 		"php": ">=7.4"
