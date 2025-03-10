@@ -1,12 +1,21 @@
 {
-  "name": "ammorium/aspect-post",
-  "type": "wordpress-plugin",
-  "description": "test",
-  "version": "dev-master",
-  "minimum-stability": "dev",
-  "autoload"    : {
-        "classmap": [
-            "/"
-        ]
-    }
+	"name": "kostyandrew/aspect-post",
+	"type": "wordpress-plugin",
+	"description": "PHP Class for WordPress which help create type of post, taxonomies and metabox",
+	"version": "dev-master",
+	"minimum-stability": "dev",
+	"require": {
+		"php": ">=7.4"
+	},
+	"authors": [
+		{
+			"name": "Andrii Kostetskyi",
+			"email": "kostyandrew@gmail.com"
+		}
+	],
+	"autoload": {
+		"psr-4": {
+			"Aspect\\": "src/"
+		}
+	}
 }
